@@ -1,3 +1,5 @@
+![Banner](banner.png)
+
 # file-permission-copier
 Copies file permissions (owner, group, mode, ACLs) from a source file to a target file. Prevents permission drift during deployment or transfer. Uses 'os' and 'stat' modules. - Focused on File operations and analysis
 
