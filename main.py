@@ -36,6 +36,9 @@ def copy_permissions(source_file, target_file):
         source_path = pathlib.Path(source_file)
         target_path = pathlib.Path(target_file)
 
+        # exists() follows symlinks, so a broken symlink reports as not found
+        # rather than as a link. That matches the stat below, which also
+        # follows links on both sides, as the help text promises.
         if not source_path.exists():
             raise FileNotFoundError(f"Source file '{source_file}' not found.")
 
@@ -45,6 +48,11 @@ def copy_permissions(source_file, target_file):
         # Get file statistics from source file (os.stat follows symlinks)
         source_stat = os.stat(source_file)
 
+        # Both halves are always attempted, even when the first one fails. A
+        # target can therefore end up half copied, new mode under old ownership
+        # or the reverse, and the False return is the only record that the copy
+        # is incomplete. The success line in main's terms prints only when both
+        # halves landed.
         success = True
 
         # Copy ownership (UID and GID) first. A chown clears the setuid
@@ -58,6 +66,9 @@ def copy_permissions(source_file, target_file):
 
         # Copy file mode (permissions) last, so special bits survive.
         try:
+            # The full st_mode goes to chmod, file type bits and all. Only the
+            # permission and special bits take effect; the type bits are ignored,
+            # so passing the whole value is simpler than masking it first.
             os.chmod(target_file, source_stat.st_mode)
             logging.info(f"Copied file mode from {source_file} to {target_file}.")
         except OSError as e:
